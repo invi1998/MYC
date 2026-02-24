@@ -362,6 +362,68 @@ namespace test3 {
         std::cout << std::endl;
     }
 
+    // 实现了前置++，后置++运算符的模板类
+    template<typename T>
+    class Counter {
+    private:
+        T value;
+    public:
+        Counter(T val) : value(val) {}
+        // 前置++
+        Counter& operator++() {
+            ++value;
+            return *this;
+        }
+        // 后置++
+        Counter operator++(int)
+        {
+            Counter temp = *this; // 保存当前状态
+            ++value; // 增加值
+            return temp; // 返回原来的状态
+        }
+
+        // 比较运算符重载
+        bool operator<(const Counter& other) const {
+            return value < other.value;
+        }
+
+        bool operator==(const Counter& other) const {
+            return value == other.value;
+        }
+
+        // 输出运算符重载
+        friend std::ostream& operator<<(std::ostream& os, const Counter& c) {
+            os << c.value;
+            return os;
+        }
+
+
+    };
+
+    void testRef2()
+    {
+        std::string&& rstr = "Hello, World!";
+
+        Counter<int> c(0);
+        std::cout << "前置++" << std::endl;
+        while (++c < 5) {
+            std::cout << " " << c;
+        }
+
+        std::cout << "\n" << std::endl;
+
+        Counter<int> c2(0);
+        std::cout << "后置++" << std::endl;
+        while (c2++ < 5) {
+            std::cout << " " << c2;
+        }
+
+        std::cout << std::endl;
+
+        // 前置++
+
+
+    }
 }
 
 
@@ -378,7 +440,8 @@ int main() {
 
     // test2::testStructAlignment();
     // test3::testRTTI();
-    test3::testRef();
+    // test3::testRef();
+    test3::testRef2();
 
 
 #ifdef _WIN32
