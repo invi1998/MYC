@@ -274,6 +274,63 @@ namespace test2{
         std::cout << "Derived 类的大小: " << sizeof(Derived) << " 字节" << std::endl;
 
     }
+
+    // 测试打印普通菱形继承和虚继承的内存布局以及内存大小
+    class A {
+    public:
+        int a;
+    };
+
+    class B : public A {
+    public:
+        int b;
+    };
+
+    class C : public A {
+    public:
+        int c;
+    };
+
+    class D : public B, public C {
+    public:
+        int d;
+    };
+
+    class A_Virtual {
+    public:
+        int a;
+        virtual ~A_Virtual() = default;
+    };
+
+    class B_Virtual : virtual public A_Virtual {
+    public:
+        int b;
+    };
+
+    class C_Virtual : virtual public A_Virtual {
+    public:
+        int c;
+    };
+
+    class D_Virtual : public B_Virtual, public C_Virtual {
+    public:
+        int d;
+    };
+
+    void testDiamondInheritance() {
+        std::cout << "普通菱形继承:" << std::endl;
+        std::cout << "A 的大小: " << sizeof(A) << " 字节" << std::endl;
+        std::cout << "B 的大小: " << sizeof(B) << " 字节" << std::endl;
+        std::cout << "C 的大小: " << sizeof(C) << " 字节" << std::endl;
+        std::cout << "D 的大小: " << sizeof(D) << " 字节" << std::endl;
+
+        std::cout << "\n虚继承:" << std::endl;
+        std::cout << "A_Virtual 的大小: " << sizeof(A_Virtual) << " 字节" << std::endl;
+        std::cout << "B_Virtual 的大小: " << sizeof(B_Virtual) << " 字节" << std::endl;
+        std::cout << "C_Virtual 的大小: " << sizeof(C_Virtual) << " 字节" << std::endl;
+        std::cout << "D_Virtual 的大小: " << sizeof(D_Virtual) << " 字节" << std::endl;
+    }
+
 }
 
 namespace test3 {
@@ -420,9 +477,6 @@ namespace test3 {
 
         std::cout << std::endl;
 
-        // 前置++
-
-
     }
 }
 
@@ -439,10 +493,10 @@ int main() {
     // 缩进快捷键（Ctrl + [ 或 Ctrl + ]）可以用来增加或减少当前行或选中行的缩进级别。
 
     // test2::testStructAlignment();
+    test2::testDiamondInheritance();
     // test3::testRTTI();
     // test3::testRef();
-    test3::testRef2();
-
+    // test3::testRef2();
 
 #ifdef _WIN32
     std::cout << "程序执行完成，按任意键退出..." << std::endl;
