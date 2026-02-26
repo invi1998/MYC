@@ -480,6 +480,79 @@ namespace test3 {
     }
 }
 
+class D
+{
+public:
+    int a;
+    D(int val=1) : a(val) {}
+    ~D() {
+        std::cout << "D 的析构函数被调用，a = " << a << std::endl;
+    }
+};
+
+namespace test4 {
+    void testDestructor() {
+        D* d = new D[2];
+        delete[] d;
+
+        int a, b0;
+        b0 = (a = 3*5, a*4, a*5, a*6); // 逗号表达式，最终结果是 a*6 的值
+        std::cout << "a = " << a << ", b0 = " << b0 << std::endl;
+
+        std::string s = "22\n";
+        std::cout << sizeof(s) << std::endl; // 输出 std::string 对象的大小，通常是 24 或 32 字节，取决于实现
+        std::cout << s.size() << std::endl;   // 输出字符串的长度，这里是 3（包括换行符和隐式的字符串结尾符）
+
+        // int a[2][] = {{1, 2}, {3, 4}}; // 错误：必须指定所有维度的大小，除了第一维
+        // 正确的声明应该是：int a[2][2] = {{1, 2}, {3, 4}};
+        int a1[][2] = {{1, 2}, {3, 4}}; // 正确：第一维大小可以省略，编译器会根据初始化列表推断
+        int a2[][2] = {{1, 2}, {}, {5, 6}}; // 正确：第一维大小可以省略，编译器会根据初始化列表推断为 3
+
+        printf("打印一个double类型的值，要求精度为4位小数，输出为10进制，同时左对齐30个字符: %-30.4f\n", 3.1415926);
+        printf("打印一个double类型的值，要求精度为4位小数，输出为10进制，同时右对齐30个字符: %30.4f\n", 3.1415926);
+
+        int b = 0;
+        // const int* p = &b; // p 是一个指向 const int 的指针，不能通过 p 修改 b 的值
+        int const* p2 = &b; // p2 是一个指向 const int 的指针，不能通过 p2 修改 b 的值
+        int * const p3 = &b; // p3 是一个 const 指针，指针本身不能修改，但可以通过 p3 修改 b 的值
+        const int * const p4 = &b; // p4 是一个指向 const int 的 const 指针，既不能通过 p4 修改 b 的值，也不能修改 p4 指针本身
+
+        int i = 10;
+        int j = 20;
+        int k = 3;
+        k *= i + j; // 等价于 k = k * (i + j)，结果是 k = 3 * (10 + 20) = 90
+
+        int num = 5;
+        int* p = (int*)malloc(num * sizeof(int));
+    
+        for(int i = 0; i < num; i++) {
+            *(p + i) = i;
+        }
+    
+        free(p);
+    
+        std::cout << "After freeing memory\n";
+    
+        for(int i = 0; i < num; i++) {
+            std::cout << *(p + i) << " ";
+        }
+    }
+
+    void testForFunc()
+    {
+        int i, j, k = 0;
+        // 下面的 for 循环中，条件部分 j = 0 是一个赋值表达式，而不是一个比较表达式。这个循环的行为是：
+        // 1. 初始化部分：i = 0, j = -1
+        // 2. 条件部分：j = 0，这会将 j 的值设置为 0，并且表达式的结果是 0（在 C++ 中，非零值被视为 true，零值被视为 false）。因此，条件部分的结果始终为 false。
+        // 3. 循环体：由于条件部分始终为 false，循环体内的代码永远不会被执行。
+        // 如果j=1或者其他非零值，则会导致循环体内的代码被执行，并且i和j会不断增加，k也会不断增加。陷入死循环
+        for (i = 0, j = -1; j = 0; i++, j++) {
+            k++;
+        }
+        std::cout << "i = " << i << ", j = " << j << ", k = " << k << std::endl;
+    }
+}
+
 
 int main() {
 #ifdef _WIN32
@@ -493,10 +566,14 @@ int main() {
     // 缩进快捷键（Ctrl + [ 或 Ctrl + ]）可以用来增加或减少当前行或选中行的缩进级别。
 
     // test2::testStructAlignment();
-    test2::testDiamondInheritance();
+    // test2::testDiamondInheritance();
     // test3::testRTTI();
     // test3::testRef();
     // test3::testRef2();
+
+    test4::testForFunc();
+
+
 
 #ifdef _WIN32
     std::cout << "程序执行完成，按任意键退出..." << std::endl;
