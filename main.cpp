@@ -6,6 +6,7 @@
 #include <vector>
 #include "solution1/Complex.h"
 #include "solution1/Date.h"
+#include "solution1/TestMySharedPtr.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -571,7 +572,11 @@ int main() {
     // test3::testRef();
     // test3::testRef2();
 
-    test4::testForFunc();
+    // test4::testForFunc();
+
+    // testMySharedPtr();
+    testMySharedPtrMultithread();
+    // testCycleReferenceCounter();
 
 
 
