@@ -681,7 +681,8 @@ int main() {
     // TestThread();
     // testThread2();
     // testThread3();
-    testThreadWithSharedPtr();
+    // testThreadWithSharedPtr();
+    testMultipleThreads();
 
 
 #ifdef _WIN32

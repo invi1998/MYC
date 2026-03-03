@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <thread>
+#include <vector>
 
 void ThreadFunc()
 {
@@ -226,6 +227,45 @@ void testThreadWithSharedPtr()
     taskThread.detach(); // 分离线程，允许它独立运行(传递真引用的时候，detach是非常危险的)
 }
 
+// 消费线程和生产线程共享数据的示例
+class Counter
+{
+private:
+    std::vector<int> sharedData; // 共享数据容器
+
+public:
+    void Producer()
+    {
+        for (int i = 0; i < 1000; ++i) {
+            sharedData.push_back(i); // 向共享数据中添加一个整数
+            std::cout << "生产者线程生产了数据: " << i << std::endl;
+        }
+    }
+
+    void Consumer()
+    {
+        for (int i = 0; i < 1000; ++i) {
+            if (!sharedData.empty()) {
+                int data = sharedData.back(); // 从共享数据中获取一个整数
+                sharedData.pop_back(); // 从共享数据中移除这个整数
+                std::cout << "消费者线程消费了数据: " << data << std::endl;
+            } else {
+                std::cout << "消费者线程等待数据..." << std::endl;
+            }
+        }
+    }
+};
+
+
+// 创建多个线程，数据共享问题分析
+void testMultipleThreads()
+{   
+    Counter sharedData; // 创建一个 Counter 对象，作为生产者和消费者线程共享的数据容器
+    std::thread producerThread(&Counter::Producer, std::ref(sharedData)); // 创建一个生产者线程，执行 Counter 的 Producer 函数
+    std::thread consumerThread(&Counter::Consumer, std::ref(sharedData)); // 创建一个消费者线程，执行 Counter 的 Consumer 函数
+    producerThread.join(); // 等待生产者线程执行完毕
+    consumerThread.join(); // 等待消费者线程执行完毕
+}
 
 
 #endif // __MY_THREAD_H__
