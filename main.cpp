@@ -7,11 +7,14 @@
 #include "solution1/Complex.h"
 #include "solution1/Date.h"
 #include "solution1/TestMySharedPtr.h"
+#include "solution1/MyThread.h"
 
 #ifdef _WIN32
 #include <windows.h>
 #include <conio.h>
 #endif
+
+using namespace std;
 
 namespace test {
     void testFunction() {
@@ -554,6 +557,95 @@ namespace test4 {
     }
 }
 
+namespace test5 {
+    // 返回值优化PVO和NRVO
+    // 先创建几个类来测试返回值优化：
+    class A {
+    public:
+        A() {
+            std::cout << "A 的默认构造函数被调用" << std::endl;
+        }
+        A(const A& other) {
+            std::cout << "A 的拷贝构造函数被调用" << std::endl;
+        }
+        A(A&& other) noexcept {
+            std::cout << "A 的移动构造函数被调用" << std::endl;
+        }
+    };
+
+    A createTempA() {
+        return A(); // 返回一个临时对象，通常会发生返回值优化（RVO）
+    }
+
+    A createA() {
+        A a; // 创建一个局部对象 a
+        return a; // 返回 a，通常会发生返回值优化（RVO）
+    }
+
+    A createAWithMove() {
+        A a; // 创建一个局部对象 a
+        return std::move(a); // 返回 a，强制使用移动语义，通常会调用移动构造函数
+    }
+
+    void testReturnValueOptimization() {
+        std::cout << "测试 createA()：" << std::endl;
+        A a1 = createA(); // 可能发生 RVO，通常不会调用拷贝或移动构造函数
+
+        std::cout << "\n测试 createAWithMove()：" << std::endl;
+        A a2 = createAWithMove(); // 可能会调用移动构造函数，但如果 RVO 发生了，仍然不会调用任何构造函数
+    }
+
+}
+
+namespace testLeetcode
+{
+    void test1() 
+    {
+        int a;
+        cin >> a;
+        vector<int> graph;
+        graph.reserve(a);
+        while (a--) { // 注意 while 处理多个 case
+            int b;
+            cin >> b; 
+            graph.push_back(b);
+        }
+
+        if (a <= 3) {
+            cout << a << endl;
+            return;
+        }
+
+        // 下面的算法是一个 O(n^2) 的解法，适用于小规模输入。对于每个元素，检查它后面的元素，直到找到一个比它大的元素为止，
+        // 如果找到了，就继续检查下一个元素；如果没有找到，就增加计数器。
+        // 但是这部分代码有BUG，因为在 while 循环中，如果 next 最终回到了 i，说明没有找到比 graph[i] 大的元素，但在这个过程中可能会错误地增加计数器。
+        // 正确的做法应该是在 while 循环结束后检查 next 是否等于 i，如果是，则说明没有找到比 graph[i] 大的元素，此时才增加计数器。
+        int res = a;
+        for (int i = 0; i < a; ++i)
+        {
+            int next = ((i + 1) >= a) ? 0 : (i + 1);
+            if (graph[next] > graph[i]) continue;
+
+            while (next != i)
+            {
+                int pre = next;
+                next = (next + 1) >= a ? 0 : (next + 1);
+                if (graph[next] <= graph[pre])
+                {
+                    ++res;
+                }
+                else {
+                    continue;
+                }
+            }
+
+        }
+
+        std::cout << res << std::endl;
+    }
+} // namespace testLeetcode
+
+
 
 int main() {
 #ifdef _WIN32
@@ -575,9 +667,21 @@ int main() {
     // test4::testForFunc();
 
     // testMySharedPtr();
-    testMySharedPtrMultithread();
+    // testMySharedPtrMultithread();
     // testCycleReferenceCounter();
 
+    // int a = 5;
+    // int &b = a;
+    // int c = 0;
+    // b = c;
+
+    // int* pa = &a;
+    // std::cout << --*pa << std::endl; // 输出 4，因为 --*pa 等价于 --(a)，先对 a 进行解引用得到 5，然后对 5 进行前置递减，结果是 4。
+
+    // TestThread();
+    // testThread2();
+    // testThread3();
+    testThreadWithSharedPtr();
 
 
 #ifdef _WIN32
