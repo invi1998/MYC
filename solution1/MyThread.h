@@ -4,6 +4,7 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <mutex>
 
 void ThreadFunc()
 {
@@ -232,26 +233,77 @@ class Counter
 {
 private:
     std::vector<int> sharedData; // 共享数据容器
+    std::mutex mtx; // 互斥锁，用于保护共享数据的访问
+    std::mutex mtx2; // 另一个互斥锁，用于保护共享数据的访问
 
 public:
     void Producer()
     {
-        for (int i = 0; i < 1000; ++i) {
-            sharedData.push_back(i); // 向共享数据中添加一个整数
-            std::cout << "生产者线程生产了数据: " << i << std::endl;
+        for (int i = 0; i < 10000; ++i) {
+            // std::lock(mtx, mtx2); // 加锁，保护共享数据的访问
+            // // std::adopt_lock 告诉 lock_guard 不要在构造时自动加锁，因为我们已经使用 std::lock 同时锁定了多个互斥锁。
+            // std::lock_guard<std::mutex> lock(mtx, std::adopt_lock); // 使用 lock_guard 自动管理锁的生命周期，确保在作用域结束时自动释放锁
+            // std::lock_guard<std::mutex> lock2(mtx2, std::adopt_lock); // 使用另一个 lock_guard 来保护对共享数据的访问，确保在输出时不会与消费者线程发生竞争条件
+            // sharedData.push_back(i); // 向共享数据中添加一个整数
+            // std::cout << "ID: " << std::this_thread::get_id() << " 生产者线程生产了数据: " << i << std::endl;
+            // // mtx.unlock(); // 解锁，允许其他线程访问共享数据
+            // // mtx2.unlock(); // 解锁，允许其他线程访问共享数据
+
+            std::unique_lock<std::mutex> lock(mtx, std::defer_lock); // 创建一个 unique_lock 对象，但不立即加锁
+            std::unique_lock<std::mutex> lock2(mtx2, std::defer_lock); // 创建另一个 unique_lock 对象，但不立即加锁
+            // std::defer_lock 的使用前提是我们需要在后续的代码中根据某些条件来决定是否加锁，以及加锁的顺序。
+            // 而且在std:::unique_lock之前不能对同一个互斥锁事先进行加锁，否则会导致死锁。
+            // lock.lock(); // 加锁，保护共享数据的访问
+            // lock2.lock(); // 加锁，保护共享数据的访问
+            if (lock2.try_lock()) { // 尝试加锁，如果成功获得锁
+                if (lock.try_lock()) { // 尝试加锁，如果成功获得锁
+                    sharedData.push_back(i); // 向共享数据中添加一个整数
+                    std::cout << "ID: " << std::this_thread::get_id() << " 生产者线程生产了数据: " << i << std::endl;
+                }
+                else {
+                    std::cout << "ID: " << std::this_thread::get_id() << " 生产者线程无法获得 mtx 锁，跳过本次生产..." << std::endl;
+                }
+            }
+            else {
+                std::cout << "ID: " << std::this_thread::get_id() << " 生产者线程无法获得 mtx2 锁，跳过本次生产..." << std::endl;
+            }
+
         }
     }
 
     void Consumer()
     {
-        for (int i = 0; i < 1000; ++i) {
-            if (!sharedData.empty()) {
-                int data = sharedData.back(); // 从共享数据中获取一个整数
-                sharedData.pop_back(); // 从共享数据中移除这个整数
-                std::cout << "消费者线程消费了数据: " << data << std::endl;
+        for (int i = 0; i < 10000; ++i) {
+            std::unique_lock<std::mutex> lock(mtx, std::try_to_lock); // 尝试加锁，保护共享数据的访问
+            if (lock.owns_lock()) { // 如果成功获得锁
+                std::unique_lock<std::mutex> lock2(mtx2, std::try_to_lock); // 尝试加锁，保护共享数据的访问
+                if (lock2.owns_lock()) { // 如果成功获得锁
+                    if (!sharedData.empty()) {
+                        int data = sharedData.back(); // 从共享数据中获取一个整数
+                        sharedData.pop_back(); // 从共享数据中移除这个整数
+                        std::cout << "ID: " << std::this_thread::get_id() << " 消费者线程消费了数据: " << data << std::endl;
+                    } else {
+                        std::cout << "ID: " << std::this_thread::get_id() << " 消费者线程等待数据..." << std::endl;
+                    }
+                } else {
+                    std::cout << "ID: " << std::this_thread::get_id() << " 消费者线程无法获得 mtx2 锁，跳过本次消费..." << std::endl;
+                }
             } else {
-                std::cout << "消费者线程等待数据..." << std::endl;
+                std::cout << "ID: " << std::this_thread::get_id() << " 消费者线程无法获得 mtx 锁，跳过本次消费..." << std::endl;
             }
+            // // std::lock(mtx2, mtx); // 加锁，保护共享数据的访问
+            // // mtx.lock(); // 加锁，保护共享数据的访问
+            // // std::lock_guard<std::mutex> lock(mtx); // 使用 lock_guard 自动管理锁的生命周期，确保在作用域结束时自动释放锁
+            // if (!sharedData.empty()) {
+            //     int data = sharedData.back(); // 从共享数据中获取一个整数
+            //     sharedData.pop_back(); // 从共享数据中移除这个整数
+            //     // std::lock_guard<std::mutex> lock2(mtx2); // 使用另一个 lock_guard 来保护对共享数据的访问，确保在输出时不会与生产者线程发生竞争条件
+            //     std::cout << "ID: " << std::this_thread::get_id() << " 消费者线程消费了数据: " << data << std::endl;
+            // } else {
+            //     std::cout << "ID: " << std::this_thread::get_id() << " 消费者线程等待数据..." << std::endl;
+            // }
+            // // mtx2.unlock(); // 解锁，允许其他线程访问共享数据
+            // // mtx.unlock(); // 解锁，允许其他线程访问共享数据
         }
     }
 };
@@ -261,10 +313,14 @@ public:
 void testMultipleThreads()
 {   
     Counter sharedData; // 创建一个 Counter 对象，作为生产者和消费者线程共享的数据容器
-    std::thread producerThread(&Counter::Producer, std::ref(sharedData)); // 创建一个生产者线程，执行 Counter 的 Producer 函数
-    std::thread consumerThread(&Counter::Consumer, std::ref(sharedData)); // 创建一个消费者线程，执行 Counter 的 Consumer 函数
-    producerThread.join(); // 等待生产者线程执行完毕
-    consumerThread.join(); // 等待消费者线程执行完毕
+    std::vector<std::thread> threads; // 创建一个线程容器，用于存储多个线程对象
+    for (int i = 0; i < 5; ++i) {
+        threads.emplace_back(&Counter::Producer, &sharedData); // 创建一个生产者线程，执行 Counter 的 Producer 函数，并将 sharedData 作为参数传递
+        threads.emplace_back(&Counter::Consumer, &sharedData); // 创建一个消费者线程，执行 Counter 的 Consumer 函数，并将 sharedData 作为参数传递
+    }
+    for (auto& t : threads) {
+        t.join(); // 等待所有线程执行完毕
+    }
 }
 
 
