@@ -9,6 +9,7 @@
 #include "solution1/TestMySharedPtr.h"
 #include "solution1/MyThread.h"
 #include "solution1/MySingleClass.h"
+#include "solution1/MyConditionVariable.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -685,7 +686,9 @@ int main() {
     // testThreadWithSharedPtr();
     // testMultipleThreads();
 
-    testSingleton();
+    // testSingleton();
+
+    testProducerConsumer();
 
 
 #ifdef _WIN32
