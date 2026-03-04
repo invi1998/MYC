@@ -8,6 +8,7 @@
 #include "solution1/Date.h"
 #include "solution1/TestMySharedPtr.h"
 #include "solution1/MyThread.h"
+#include "solution1/MySingleClass.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -682,7 +683,9 @@ int main() {
     // testThread2();
     // testThread3();
     // testThreadWithSharedPtr();
-    testMultipleThreads();
+    // testMultipleThreads();
+
+    testSingleton();
 
 
 #ifdef _WIN32
